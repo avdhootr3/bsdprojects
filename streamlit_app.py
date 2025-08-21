@@ -4,10 +4,13 @@ import re
 from pathlib import Path
 import base64
 
+
+
 # --- Page config ---
 st.set_page_config(page_title="Project Dashboard", layout="wide")
 
-# --- Floating Company Logo ---
+
+# --- Floating Company Logo (screen + print: page 1 only) ---
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
@@ -16,45 +19,130 @@ logo_base64 = get_base64_image("logo.png")
 
 st.markdown(f"""
     <style>
+    /* Screen: keep floating logo like before */
     .fixed-logo {{
         position: fixed;
         top: 15px;
         right: 25px;
         z-index: 9999;
     }}
+
+    /* Inline logo is hidden on screen */
+    .print-logo-inline {{ display: none; }}
+
+    /* Print rules */
+    @media print {{
+        /* Hide the floating (fixed) one while printing to avoid overlap */
+        .fixed-logo {{ display: none; }}
+
+        /* Show a single inline logo at the very top of page 1 only (flows with content) */
+        .print-logo-inline {{
+            display: block;
+            text-align: right;
+            margin: 10px 25px 10px 0; /* adjust if needed */
+
+
+        }}
+    }}
     </style>
+
+    <!-- Screen (floating) -->
     <div class="fixed-logo">
-        <img src="data:image/png;base64,{logo_base64}" width="100">
+        <img src="data:image/png;base64,{logo_base64}" width="100" alt="Company logo">
+    </div>
+
+    <!-- Print-only (appears once at start of document, i.e., on page 1) -->
+    <div class="print-logo-inline">
+        <img src="data:image/png;base64,{logo_base64}" width="100" alt="Company logo">
     </div>
     """, unsafe_allow_html=True)
 
+
 st.markdown("""
     <style>
-    /* Apply gridline style to all metric containers */
+    /* Use theme variables so it works in light & dark mode */
     div[data-testid="stMetric"] {
-        border: 1px solid #ccc;
+        border: 1px solid var(--secondary-background-color);
         border-radius: 8px;
         padding: 8px;
-        background-color: #f9f9f9;
+        background-color: var(--background-color);
+        color: var(--text-color);
     }
 
-    /* Apply gridlines to markdown blocks inside columns */
     div[data-testid="column"] > div > div {
-        border: 1px solid #ccc;
+        border: 1px solid var(--secondary-background-color);
         border-radius: 8px;
         padding: 8px;
         margin-bottom: 8px;
-        background-color: #ffffff;
+        background-color: var(--background-color);
+        color: var(--text-color);
     }
 
-    /* Add slight shadow for depth */
     div[data-testid="stMetric"], 
     div[data-testid="column"] > div > div {
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
+    
+
+    @media print {
+    /* Force clean black & white for everything */
+    body, [class^="st-"], [data-testid] {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    /* Metrics (top row) */
+    div[data-testid="stMetric"] {
+        border: 1px solid #000000 !important;
+        border-radius: 4px;
+        padding: 6px;
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    /* All content boxes inside columns */
+    div[data-testid="column"] > div > div {
+        border: 1px solid #000000 !important;
+        border-radius: 4px;
+        padding: 6px;
+        margin-bottom: 6px;
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    /* Headings bold + clear */
+    h1, h2, h3, h4, h5, h6, strong {
+        color: #000000 !important;
+        font-weight: bold !important;
+    }
+
+    /* Remove shadows in print */
+    * {
+        box-shadow: none !important;
+    }
+
+    /* --- Logo print fix (always full on page 1) --- */
+    .print-logo-inline {
+        display: block !important;
+        text-align: right;
+        margin: 40px 25px 20px 0;  /* keep away from page edge */
+        page-break-after: avoid;   /* don’t push content to new page */
+    }
+    .print-logo-inline img {
+        width: 120px !important;   /* fixed safe width */
+        height: auto !important;   /* keep proportions */
+        max-width: none !important;
+        max-height: none !important;
+        object-fit: contain !important;
+    }
+
+
+}
+    
+
+
     </style>
 """, unsafe_allow_html=True)
-
 
 
 
