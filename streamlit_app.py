@@ -147,8 +147,11 @@ st.markdown("""
 
 
 # --- Load Excel and normalize headers
-df = pd.read_excel("Dashboard_data.xlsx", sheet_name=0)
+# --- Load Excel directly from GitHub repo (raw link) ---
+url = "https://raw.githubusercontent.com/avdhootr3/bsdprojects/main/data/Dashboard_data.xlsx"
+df = pd.read_excel(url, sheet_name=0)
 df.columns = df.columns.str.strip()
+
 
 
 # --- Filters & Search  ---
@@ -479,3 +482,4 @@ col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update', 'UpdateDate'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
