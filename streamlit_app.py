@@ -377,7 +377,7 @@ if filtered_df.empty:
 
 project = filtered_df.iloc[0]
 
-proj_name = get_field(project, [proj_name_field, 'Project'])
+proj_name = get_field(project, [proj_name_field, 'Project1'])
 proj_dates = get_field(project, ['Project Dates', 'Project Dates ', 'ProjectDate', 'Project_Date'])
 duration = get_field(project, ['Project Duration', 'ProjectDuration', 'Duration', 'Project Duration '])
 st.markdown(f"### 📌 Project : **{proj_name or ''}**")
@@ -482,4 +482,5 @@ col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update', 'UpdateDate'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
 
