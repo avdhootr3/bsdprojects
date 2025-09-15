@@ -330,21 +330,28 @@ def color_percent_html(pct):
     return f"<span style='color:{color}; font-weight:bold'>{pct}%</span>"
 
 def format_date(value):
-    """Format pandas/str date to DD-MMM-YYYY, or return blank if none."""
+    """Format pandas/str/Excel date to DD-MMM-YYYY, safe for serials & text."""
     try:
         if value is None or (isinstance(value, float) and pd.isna(value)):
             return ""
-        parsed = pd.to_datetime(value)
+        # handle Excel serial numbers directly
+        if isinstance(value, (int, float)):
+            parsed = pd.to_datetime(value, unit="d", origin="1899-12-30", errors="coerce")
+        else:
+            parsed = pd.to_datetime(value, errors="coerce", dayfirst=False)
+        if pd.isna(parsed):
+            return str(value)  # fallback: show raw value instead of 1970
         return parsed.strftime("%d-%b-%Y")
     except Exception:
-        return "" if value is None else str(value)
+        return str(value)
+
 
 def break_sentences_to_html(text):
-    """Insert line breaks (<br>) after '.', '/', '!' or '?' for markdown with unsafe_html."""
+    """Insert line breaks (<br>) after '|' for markdown with unsafe_html."""
     if text is None or (isinstance(text, float) and pd.isna(text)):
         return ""
     s = str(text).strip()
-    s = re.sub(r'([.!?/])\s+', r'\1\n', s)
+    s = re.sub(r'([|])\s+', r'\1\n', s)
     return s.replace("\n", "<br>")
 
 # --- Select project row ---
@@ -357,14 +364,8 @@ project = filtered_df.iloc[0]
 
 
 # --- Header
-# --- Ensure we have the Project column name (proj_name_field) ---
-proj_name_field = next((c for c in df.columns if c.lower().strip() == 'project'), None)
-if proj_name_field is None:
-    proj_name_field = next((c for c in df.columns if 'project' in c.lower()), None)
+# --- Ensure we have the Project column name (proj_name_field) --- Deleted now
 
-if proj_name_field is None:
-    st.error("Could not find a 'Project' column in the Excel. Please check headers.")
-    st.stop()
 
 # --- Select first matching project from filtered_df (filters must be applied earlier) ---
 if 'filtered_df' not in globals():
@@ -377,10 +378,11 @@ if filtered_df.empty:
 
 project = filtered_df.iloc[0]
 
-proj_name = get_field(project, [proj_name_field, 'Project1'])
+proj_name = get_field(project, ['Project1'])   # use Project1 column
 proj_dates = get_field(project, ['Project Dates', 'Project Dates ', 'ProjectDate', 'Project_Date'])
 duration = get_field(project, ['Project Duration', 'ProjectDuration', 'Duration', 'Project Duration '])
 st.markdown(f"### 📌 Project : **{proj_name or ''}**")
+
 st.markdown(f"**📅 Project Dates**: {proj_dates or ''} &nbsp;&nbsp;&nbsp; **📆 Duration**: {duration or ''}")
 st.markdown("---")
 
@@ -482,5 +484,3 @@ col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update', 'UpdateDate'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
-
-
