@@ -240,9 +240,11 @@ if st.session_state.selected_type != "All":
 
 if st.session_state.search_query:
     search_lower = st.session_state.search_query.lower()
-    filtered_df = filtered_df[
-        filtered_df.apply(lambda row: search_lower in row.to_string().lower(), axis=1)
-    ]
+    if "search_db" in filtered_df.columns:
+        filtered_df = filtered_df[
+            filtered_df["search_db"].astype(str).str.lower().str.contains(search_lower)
+        ]
+
 
 # --- Step 4: Current Filters Summary ---
 st.sidebar.markdown("**Current Filters:**")
@@ -484,3 +486,4 @@ col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update', 'UpdateDate'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
