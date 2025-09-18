@@ -234,8 +234,15 @@ col2.markdown("### 📅 Weekly Plan")
 weekly_val = get_field(project, ['Weekly Plan'])
 col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 
+# --- Challenges & Risks ---
+challenges_val = get_field(project, ['Challenges / Risks'])
+if challenges_val:
+    st.markdown("### ⚠️ Challenges & Risks")
+    st.markdown(break_sentences_to_html(challenges_val), unsafe_allow_html=True)
+
 # --- Footer ---
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
 
