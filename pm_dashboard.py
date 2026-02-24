@@ -167,24 +167,50 @@ st.markdown(f"### 📌 Project : **{proj_name or ''}**")
 st.markdown(f"**📅 Project Dates**: {proj_dates or ''} &nbsp;&nbsp;&nbsp; **📆 Duration**: {duration or ''}")
 st.markdown("---")
 
-# --- First row (metrics) ---
-col1, col2, col3, col4 = st.columns(4)
-total_po = get_field(project, ['Total PO Amt'])
-billed_till = get_field(project, ['Billed Till Date'])
-open_billing = get_field(project, ['Open Billing'])
-billed_raw = get_field(project, ['Billed', 'Billed %'])
+# --- First row (Dynamic layout based on Open AR)
 
-col1.metric("💰 PO Amt (in Lakhs)", f"₹ {format_num(total_po)}")
-col2.metric("📤 Billing Done (in Lakhs)", f"₹ {format_num(billed_till)}")
-col3.metric("🧾 Open Billing (in Lakhs)", f"₹ {format_num(open_billing)}")
+total_po = get_field(project, ['Total PO Amt', 'Total PO Amt ', 'Total_PO_Amt', ' Total PO Amt '])
+billed_till = get_field(project, ['Billed Till Date', 'Billed Till Date '])
+open_billing = get_field(project, ['Open Billing', 'Open Billing '])
+billed_raw = get_field(project, ['Billed', 'Billed ', 'Billed %', 'Billed%'])
+open_ar = get_field(project, ['Open AR', 'Open AR '])
 
 billed_pct = parse_percent(billed_raw)
+
+# Determine if Open AR should be shown
+show_open_ar = False
+if open_ar not in [None, "", 0, "0"]:
+    try:
+        if float(open_ar) != 0:
+            show_open_ar = True
+    except:
+        pass
+
+# Create dynamic columns
+num_cols = 5 if show_open_ar else 4
+cols = st.columns(num_cols)
+
+# --- Column 1
+cols[0].metric("💰 PO Amt (in Lakhs)", f"₹ {format_num(total_po)}")
+
+# --- Column 2
+cols[1].metric("📤 Billing Done (in Lakhs)", f"₹ {format_num(billed_till)}")
+
+# --- Column 3
+cols[2].metric("🧾 Open Billing (in Lakhs)", f"₹ {format_num(open_billing)}")
+
+# --- Column 4
 if billed_pct is not None:
-    col4.metric("📊 Billed %", f"{billed_pct}%")
-    with col4:
-        st.progress(min(1.0, max(0.0, billed_pct/100)))
+    cols[3].metric("📊 Billed %", f"{billed_pct}%")
+    with cols[3]:
+        prog = max(0, min(100, billed_pct)) / 100.0
+        st.progress(prog)
 else:
-    col4.metric("📊 Billed %", "N/A")
+    cols[3].metric("📊 Billed %", "N/A")
+
+# --- Column 5 (Only if Open AR exists and non-zero)
+if show_open_ar:
+    cols[4].metric("💳 Open AR (in Lakhs)", f"₹ {format_num(open_ar)}")
 
 # --- Second row (NO Profit, only Resources + Milestone) ---
 line_items = []
@@ -244,5 +270,6 @@ if challenges_val:
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
 
 
