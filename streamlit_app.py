@@ -331,29 +331,6 @@ def break_sentences_to_html(text):
     s = re.sub(r'([|])\s+', r'\1\n', s)
     return s.replace("\n", "<br>")
 
-# --- Select project row ---
-if filtered_df.empty:
-    st.warning("No projects match your selection.")
-    st.stop()
-
-# Pick the first matching row from filtered results
-project = filtered_df.iloc[0]
-
-
-# --- Header
-# --- Ensure we have the Project column name (proj_name_field) --- Deleted now
-
-
-# --- Select first matching project from filtered_df (filters must be applied earlier) ---
-if 'filtered_df' not in globals():
-    # fallback: if you accidentally removed the filter block, use full df
-    filtered_df = df.copy()
-
-if filtered_df.empty:
-    st.warning("No projects match your selection.")
-    st.stop()
-
-project = filtered_df.iloc[0]
 
 proj_name = get_field(project, ['Project1'])   # use Project1 column
 proj_dates = get_field(project, ['Project Dates', 'Project Dates ', 'ProjectDate', 'Project_Date'])
@@ -485,6 +462,7 @@ col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update', 'UpdateDate'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
 
 
 
