@@ -154,118 +154,93 @@ df.columns = df.columns.str.strip()
 
 
 
-# --- Filters & Search  ---
-# --- Dynamic Filters & Search ---
-st.sidebar.header("🔍 Filter Projects")
+# ================================
+# 🔎 SIMPLE & STRUCTURED NAVIGATION
+# ================================
 
-# --- Session state defaults ---
-if "selected_region" not in st.session_state:
-    st.session_state.selected_region = "All"
-if "selected_project" not in st.session_state:
-    st.session_state.selected_project = "All"
-if "selected_type" not in st.session_state:
-    st.session_state.selected_type = "All"
-if "search_query" not in st.session_state:
-    st.session_state.search_query = ""
+st.sidebar.header("📂 Project Navigation")
 
+# Ensure clean headers
+df["Region"] = df["Region"].astype(str).str.strip()
+df["Type"] = df["Type"].astype(str).str.strip()
+df["Project1"] = df["Project1"].astype(str).str.strip()
 
-# --- Clear Filters Button  ---
-if st.sidebar.button("🧹 Clear Filters"):
-    # wipe widget state so it behaves like a hard reload
-    for k in ("selected_region", "selected_project", "selected_type", "search_query"):
-        st.session_state.pop(k, None)
-    st.rerun()  # re-run after state is wiped -> search box empties
+# Unique projects count helper
+def unique_project_count(data):
+    return data["Project1"].nunique()
 
 
-
-
-# --- Search Box ---
-st.session_state.search_query = st.sidebar.text_input(
-    "Search by keyword:",
-    value=st.session_state.search_query
-)
-
-# --- Step 1: Calculate available filter options based on current selections ---
-temp_df = df.copy()
-
-# Apply all filters progressively for dynamic option calculation
-if st.session_state.selected_region != "All":
-    temp_df = temp_df[temp_df["Region"] == st.session_state.selected_region]
-if st.session_state.selected_project != "All":
-    temp_df = temp_df[temp_df["Project"] == st.session_state.selected_project]
-if st.session_state.selected_type != "All":
-    temp_df = temp_df[temp_df["Type"] == st.session_state.selected_type]
-
-# Available options based on filtered temp_df
-region_options = ["All"] + sorted(df["Region"].dropna().unique().tolist())
-project_options = ["All"] + sorted(temp_df["Project"].dropna().unique().tolist())
-type_options = ["All"] + sorted(temp_df["Type"].dropna().unique().tolist())
-
-# --- Step 2: Render dropdowns ---
-st.session_state.selected_region = st.sidebar.selectbox(
-    "Select Region",
-    region_options,
-    index=region_options.index(st.session_state.selected_region) if st.session_state.selected_region in region_options else 0
-)
-# Update project list based on region selection
-temp_df = df.copy()
-if st.session_state.selected_region != "All":
-    temp_df = temp_df[temp_df["Region"] == st.session_state.selected_region]
-project_options = ["All"] + sorted(temp_df["Project"].dropna().unique().tolist())
-
-st.session_state.selected_project = st.sidebar.selectbox(
+# -------------------------------
+# 1️⃣ Simple Project Dropdown
+# -------------------------------
+project_list = sorted(df["Project1"].dropna().unique())
+selected_project = st.sidebar.selectbox(
     "Select Project",
-    project_options,
-    index=project_options.index(st.session_state.selected_project) if st.session_state.selected_project in project_options else 0
-)
-# Update type list based on region + project
-if st.session_state.selected_project != "All":
-    temp_df = temp_df[temp_df["Project"] == st.session_state.selected_project]
-type_options = ["All"] + sorted(temp_df["Type"].dropna().unique().tolist())
-
-st.session_state.selected_type = st.sidebar.selectbox(
-    "Select Type",
-    type_options,
-    index=type_options.index(st.session_state.selected_type) if st.session_state.selected_type in type_options else 0
+    ["-- Select Project --"] + project_list
 )
 
-# --- Step 3: Apply final filters ---
-filtered_df = df.copy()
-if st.session_state.selected_region != "All":
-    filtered_df = filtered_df[filtered_df["Region"] == st.session_state.selected_region]
-if st.session_state.selected_project != "All":
-    filtered_df = filtered_df[filtered_df["Project"] == st.session_state.selected_project]
-if st.session_state.selected_type != "All":
-    filtered_df = filtered_df[filtered_df["Type"] == st.session_state.selected_type]
 
-if st.session_state.search_query:
-    search_lower = st.session_state.search_query.lower()
-    if "search_db" in filtered_df.columns:
-        filtered_df = filtered_df[
-            filtered_df["search_db"].astype(str).str.lower().str.contains(search_lower)
-        ]
+# -------------------------------
+# 2️⃣ Region Summary (Expandable)
+# -------------------------------
+st.sidebar.markdown("---")
+st.sidebar.subheader("📍 Region Summary")
 
+regions = sorted(df["Region"].dropna().unique())
 
-# --- Step 4: Current Filters Summary ---
-st.sidebar.markdown("**Current Filters:**")
-st.sidebar.write(f"Region: {st.session_state.selected_region}")
-st.sidebar.write(f"Project: {st.session_state.selected_project}")
-st.sidebar.write(f"Type: {st.session_state.selected_type}")
-if st.session_state.search_query:
-    st.sidebar.write(f"Search: {st.session_state.search_query}")
+if "open_section" not in st.session_state:
+    st.session_state.open_section = None
 
+for region in regions:
+    region_df = df[df["Region"] == region]
+    count = unique_project_count(region_df)
 
-# --- END Filters & Search replacement ---
+    if st.sidebar.button(f"{region} ({count})", key=f"region_{region}"):
+        st.session_state.open_section = f"region_{region}"
+
+    if st.session_state.open_section == f"region_{region}":
+        for proj in sorted(region_df["Project1"].unique()):
+            if st.sidebar.button(f"   ↳ {proj}", key=f"{region}_{proj}"):
+                selected_project = proj
 
 
+# -------------------------------
+# 3️⃣ Type Summary (Expandable)
+# -------------------------------
+st.sidebar.markdown("---")
+st.sidebar.subheader("📁 Type Summary")
 
-# Pick first project in filtered list
-if not filtered_df.empty:
-    project = filtered_df.iloc[0]
-else:
-    st.warning("No projects match your selection.")
+types = sorted(df["Type"].dropna().unique())
+
+for t in types:
+    type_df = df[df["Type"] == t]
+    count = unique_project_count(type_df)
+
+    if st.sidebar.button(f"{t} ({count})", key=f"type_{t}"):
+        st.session_state.open_section = f"type_{t}"
+
+    if st.session_state.open_section == f"type_{t}":
+        for proj in sorted(type_df["Project1"].unique()):
+            if st.sidebar.button(f"   ↳ {proj}", key=f"{t}_{proj}"):
+                selected_project = proj
+
+
+
+# ================================
+# 🎯 Final Project Selection
+# ================================
+
+if selected_project == "-- Select Project --":
+    st.info("Please select a project from sidebar.")
     st.stop()
 
+project_df = df[df["Project1"] == selected_project]
+
+if project_df.empty:
+    st.warning("Project not found.")
+    st.stop()
+
+project = project_df.iloc[0]
 # From here down, keep your *existing* rendering logic using 'project'
 
 
@@ -510,5 +485,6 @@ col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update', 'UpdateDate'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
 
 
