@@ -186,41 +186,46 @@ selected_project = st.sidebar.selectbox(
     key="selected_project"
 )
 
+# -------------------------------
+# 📍 Region Summary (Display Only)
+# -------------------------------
 
-# -------------------------------
-# 2️⃣ Region Summary (Expandable)
-# -------------------------------
 st.sidebar.markdown("---")
 st.sidebar.subheader("📍 Region Summary")
 
+selected_project_value = st.session_state.selected_project
+
+selected_region = None
+selected_type = None
+
+if selected_project_value != "-- Select Project --":
+    row = df[df["Project"] == selected_project_value]
+    if not row.empty:
+        selected_region = row.iloc[0]["Region"]
+        selected_type = row.iloc[0]["Type"]
+
 regions = sorted(df["Region"].dropna().unique())
-
-if "open_section" not in st.session_state:
-    st.session_state.open_section = None
-
-def toggle_section(section_key):
-    if st.session_state.open_section == section_key:
-        st.session_state.open_section = None   # collapse if same clicked
-    else:
-        st.session_state.open_section = section_key  # open new
 
 for region in regions:
     region_df = df[df["Region"] == region]
-    count = unique_project_count(region_df)
+    count = region_df["Project"].nunique()
 
-    if st.sidebar.button(f"{region} ({count})", key=f"region_{region}"):
-        toggle_section(f"region_{region}")
-
-    if st.session_state.open_section == f"region_{region}":
-        for proj in sorted(type_df["Project"].unique()):
-            if st.sidebar.button(f"   ↳ {proj}", key=f"{region}_{proj}"):
-                st.session_state.selected_project = proj
-                st.session_state.open_section = f"region_{region}"
+    if region == selected_region:
+        st.sidebar.markdown(
+            f"<div style='background-color:#ffe082; padding:6px; border-radius:6px; font-weight:bold;'>{region} ({count})</div>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.sidebar.markdown(
+            f"<div style='padding:6px;'>{region} ({count})</div>",
+            unsafe_allow_html=True
+        )
 
 
 # -------------------------------
-# 3️⃣ Type Summary (Expandable)
+# 📁 Type Summary (Display Only)
 # -------------------------------
+
 st.sidebar.markdown("---")
 st.sidebar.subheader("📁 Type Summary")
 
@@ -228,18 +233,18 @@ types = sorted(df["Type"].dropna().unique())
 
 for t in types:
     type_df = df[df["Type"] == t]
-    count = unique_project_count(type_df)
+    count = type_df["Project"].nunique()
 
-    if st.sidebar.button(f"{t} ({count})", key=f"type_{t}"):
-        toggle_section(f"type_{t}")
-
-    if st.session_state.open_section == f"type_{t}":
-        for proj in sorted(type_df["Project"].unique()):
-            if st.sidebar.button(f"   ↳ {proj}", key=f"{t}_{proj}"):
-                st.session_state.selected_project = proj
-                st.session_state.open_section = f"type_{t}"
-
-
+    if t == selected_type:
+        st.sidebar.markdown(
+            f"<div style='background-color:#c8e6c9; padding:6px; border-radius:6px; font-weight:bold;'>{t} ({count})</div>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.sidebar.markdown(
+            f"<div style='padding:6px;'>{t} ({count})</div>",
+            unsafe_allow_html=True
+        )
 
 # ================================
 # 🎯 Final Project Selection
@@ -477,6 +482,7 @@ col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update', 'UpdateDate'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
 
 
 
