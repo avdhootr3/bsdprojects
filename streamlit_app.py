@@ -175,12 +175,19 @@ def unique_project_count(data):
 # 1️⃣ Simple Project Dropdown
 # -------------------------------
 project_list = sorted(df["Project"].dropna().unique())
+if "selected_project" not in st.session_state:
+    st.session_state.selected_project = "-- Select Project --"
+
 selected_project = st.sidebar.selectbox(
     "Select Project",
-    ["-- Select Project --"] + project_list
+    ["-- Select Project --"] + project_list,
+    index=(["-- Select Project --"] + project_list).index(st.session_state.selected_project)
+        if st.session_state.selected_project in (["-- Select Project --"] + project_list)
+        else 0
 )
-if selected_project != "-- Select Project --":
-    st.session_state.open_section = None
+
+st.session_state.selected_project = selected_project
+
 
 # -------------------------------
 # 2️⃣ Region Summary (Expandable)
@@ -207,9 +214,9 @@ for region in regions:
         toggle_section(f"region_{region}")
 
     if st.session_state.open_section == f"region_{region}":
-        for proj in sorted(region_df["Project"].unique()):
-            if st.sidebar.button(f"   ↳ {proj}", key=f"{region}_{proj}"):
-                selected_project = proj
+        for proj in sorted(type_df["Project"].unique()):
+            if st.sidebar.button(f"   ↳ {proj}", key=f"{t}_{proj}"):
+                st.session_state.selected_project = proj
 
 
 # -------------------------------
@@ -470,6 +477,7 @@ col2.markdown(break_sentences_to_html(weekly_val), unsafe_allow_html=True)
 updated_on = get_field(project, ['Update Date', 'Updated On', 'Update', 'UpdateDate'])
 st.markdown("---")
 st.caption("Updated on: " + format_date(updated_on))
+
 
 
 
